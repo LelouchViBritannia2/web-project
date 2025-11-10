@@ -5,10 +5,15 @@ from datetime import timedelta
 import secrets
 
 class Account(models.Model):
+    name = models.CharField(verbose_name='Имя', max_length=128, blank=True, null=True)
+    last_name = models.CharField(verbose_name='Фамилия', max_length=128, blank=True, null=True)
+    city = models.CharField(verbose_name='Город', max_length=128,  blank=True, null=True)
+    birthday = models.DateField(verbose_name='Дата рождения', blank=True, null=True)
     email = models.EmailField(verbose_name="Email", unique=True)
+    phone_number = models.CharField(verbose_name="Номер телефона",unique=True, blank=True, null=True, max_length=11)
     password = models.CharField(max_length=128, verbose_name="Пароль")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    session_token = models.CharField(max_length=64, blank=True,null=True, unique=True)
+    session_token = models.CharField(max_length=64, blank=True, null=True, unique=True)
     token_expires = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -34,3 +39,13 @@ class Account(models.Model):
         return(
             self.session_token == token and self.token_expires > timezone.now()
         )
+    
+class Cities(models.Model):
+    city_name = models.CharField(verbose_name='Название города', max_length=128)
+
+    class Meta:
+        verbose_name = "Город"
+        verbose_name_plural = "Города"
+    
+    def __str__(self):
+        return self.city_name

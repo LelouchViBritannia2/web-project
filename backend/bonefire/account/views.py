@@ -1,45 +1,43 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Account
-from .serializers import AccountSerializer
-from datetime import timedelta
-from django.utils import timezone
-import traceback
+from .models import Account, Cities
+from .serializers import AccountSerializer, CitiesSerializer
 
 @api_view(['POST'])
 def account_create(request):
-    email = request.data.get('email')
-    password = request.data.get('password')
-
     serializer = AccountSerializer(data=request.data)
         
-    if not serializer.is_valid():
+    if serializer.is_valid():
+        try:
+            account = serializer.save()
+        
+            session_token = account.generate_session_token()
+                
+            response_data = {
+                'account_id': account.id,
+                'email': account.email
+            }
+                
+            response = Response(response_data, status=status.HTTP_201_CREATED)
+                
+            response.set_cookie(
+                'session_token',
+                session_token,
+                max_age=30*24*60*60, 
+                httponly=True,
+                secure=False,
+                samesite='Lax'
+            )
+        
+            return response
+        except Exception as e:
+            return Response({'error': 'Ошибка сервера при сохранении аккаунта'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    else:
         return Response({
             'details': serializer.errors
-        })
-        
-    account = serializer.save()
-        
-    session_token = account.generate_session_token()
-        
-    response_data = {
-        'account_id': account.id,
-        'email': account.email
-    }
-        
-    response = Response(response_data, status=status.HTTP_201_CREATED)
-        
-    response.set_cookie(
-        'session_token',
-        session_token,
-        max_age=30*24*60*60, 
-        httponly=True,
-        secure=False,
-        samesite='Lax'
-    )
-        
-    return response
+        }, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['POST'])
 def login_view(request):
@@ -96,6 +94,8 @@ def logout_view(request):
     return response
 @api_view(['GET'])
 def get_current_user(request):
+
+
     session_token = request.COOKIES.get('session_token')
     if not session_token:
         return Response({
@@ -123,3 +123,9 @@ def get_current_user(request):
         return Response({
             'is_authenticated': False
             })
+@api_view(['GET'])
+def cities(request):
+    cities = Cities.objects.all()
+    serializer = CitiesSerializer(cities, many=True)
+    return Response(serializer.data, content_type='application/json')
+    

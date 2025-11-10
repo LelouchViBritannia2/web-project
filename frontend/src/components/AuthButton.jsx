@@ -39,7 +39,6 @@ function AuthButton(){
     
     return(
         <nav className="top-bar-conteiner">
-                <a href="/registration">Зарегистрироваться</a>
                 <a href="auth.html">Войти</a>
         </nav>
     )
